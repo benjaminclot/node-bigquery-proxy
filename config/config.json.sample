@@ -1,0 +1,10 @@
+{
+  "bigQuery": {
+    "projectId": "PROJECT_ID",
+    "datasetId": "DATASET_ID",
+    "tableId": "TABLE_ID"
+  },
+  "server": {
+    "port": 8080
+  }
+}
