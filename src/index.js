@@ -70,23 +70,35 @@ http
         req.on('data', chunk => body.push(chunk)).on('end', () => {
           body = Buffer.concat(body).toString();
 
-          insertData(JSON.parse(body))
-            .then(() => {
-              res.statusCode = 200;
-              res.end();
-            })
-            .catch(err => {
-              if (err instanceof Error) {
-                // eslint-disable-next-line no-console
-                console.error(err);
-              } else {
-                // eslint-disable-next-line no-console
-                console.error(new Error(err));
-              }
+          try {
+            body = JSON.parse(body);
+          } catch(e) {
+            // eslint-disable-next-line no-console
+            console.error('Error while parsing JSON', e);
 
-              res.statusCode = 400;
-              res.end();
-            });
+            res.statusCode = 400;
+            res.end();
+          }
+
+          if (typeof body === 'object') {
+            insertData()
+              .then(() => {
+                res.statusCode = 200;
+                res.end();
+              })
+              .catch(err => {
+                if (err instanceof Error) {
+                  // eslint-disable-next-line no-console
+                  console.error(err);
+                } else {
+                  // eslint-disable-next-line no-console
+                  console.error(new Error(err));
+                }
+
+                res.statusCode = 400;
+                res.end();
+              });
+          }
         });
 
         break;
