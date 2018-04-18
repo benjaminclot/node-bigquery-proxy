@@ -46,7 +46,7 @@ var insertData = data => {
 };
 
 var isValidReq = data => {
-  return !!data;
+  return !!(typeof data === 'object' && (data.length > 0 || Object.keys(data).length > 0));
 };
 
 http
@@ -80,25 +80,23 @@ http
             res.end();
           }
 
-          if (typeof body === 'object' && (body.length > 0 || Object.keys(body).length > 0)) {
-            insertData()
-              .then(() => {
-                res.statusCode = 200;
-                res.end();
-              })
-              .catch(err => {
-                if (err instanceof Error) {
-                  // eslint-disable-next-line no-console
-                  console.error(err);
-                } else {
-                  // eslint-disable-next-line no-console
-                  console.error(new Error(err));
-                }
+          insertData()
+            .then(() => {
+              res.statusCode = 200;
+              res.end();
+            })
+            .catch(err => {
+              if (err instanceof Error) {
+                // eslint-disable-next-line no-console
+                console.error(err);
+              } else {
+                // eslint-disable-next-line no-console
+                console.error(new Error(err));
+              }
 
-                res.statusCode = 400;
-                res.end();
-              });
-          }
+              res.statusCode = 400;
+              res.end();
+            });
         });
 
         break;
