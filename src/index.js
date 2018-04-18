@@ -45,8 +45,8 @@ var insertData = data => {
   });
 };
 
-var isValidReq = req => {
-  return !!req.body;
+var isValidReq = data => {
+  return !!data;
 };
 
 const server = http.createServer((req, res) => {
