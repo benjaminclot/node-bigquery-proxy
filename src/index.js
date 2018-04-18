@@ -16,10 +16,11 @@
 
 'use strict';
 
-const config = require('./../config/config.json');
+const path = require('path');
+const config = require(path.join(__dirname, '..', 'config', 'config.json'));
 const bigQuery = require('@google-cloud/bigquery')({
   projectId: config.bigQuery.projectId,
-  keyFilename: './../config/auth.json',
+  keyFilename: path.join(__dirname, '..', 'config', 'auth.json'),
 });
 const http = require('http');
 const port = config.server.port;
