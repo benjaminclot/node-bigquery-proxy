@@ -80,7 +80,7 @@ http
             res.end();
           }
 
-          insertData()
+          insertData(body)
             .then(() => {
               res.statusCode = 200;
               res.end();
