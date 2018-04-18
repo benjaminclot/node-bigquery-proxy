@@ -69,7 +69,7 @@ const server = http.createServer((req, res) => {
       req.on('data', chunk => body.push(chunk)).on('end', () => {
         body = Buffer.concat(body).toString();
 
-        insertData(body)
+        insertData(JSON.parse(body))
           .then(() => {
             res.statusCode = 200;
             res.end();
