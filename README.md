@@ -3,7 +3,7 @@
 > Node.js proxy server for [Google BigQuery](https://cloud.google.com/bigquery/docs).
 
 This proxy allows you to passthru rows from a POST request directly into BigQuery.
-It's raw, meaning there's no queuing, buffering, logging, etc.
+It's raw, meaning there's no queuing, buffering, etc.
 
 ### Installing
 

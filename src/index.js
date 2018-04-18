@@ -23,7 +23,6 @@ const bigQuery = require('@google-cloud/bigquery')({
   keyFilename: path.join(__dirname, '..', 'config', 'auth.json'),
 });
 const http = require('http');
-const port = config.server.port;
 
 var insertData = data => {
   return new Promise(function(resolve, reject) {
@@ -50,44 +49,52 @@ var isValidReq = data => {
   return !!data;
 };
 
-const server = http.createServer((req, res) => {
-  let body = [];
+http
+  .createServer((req, res) => {
+    let body = [];
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Accept, Cache-Control, Content-Type, Origin, X-Requested-With'
-  );
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Accept, Cache-Control, Content-Type, Origin, X-Requested-With'
+    );
 
-  switch (req.method) {
-    case 'OPTIONS':
-      res.statusCode = 200;
-      res.end();
+    switch (req.method) {
+      case 'OPTIONS':
+        res.statusCode = 200;
+        res.end();
 
-      break;
-    case 'POST':
-      req.on('data', chunk => body.push(chunk)).on('end', () => {
-        body = Buffer.concat(body).toString();
+        break;
+      case 'POST':
+        req.on('data', chunk => body.push(chunk)).on('end', () => {
+          body = Buffer.concat(body).toString();
 
-        insertData(JSON.parse(body))
-          .then(() => {
-            res.statusCode = 200;
-            res.end();
-          })
-          .catch(() => {
-            res.statusCode = 400;
-            res.end();
-          });
-      });
+          insertData(JSON.parse(body))
+            .then(() => {
+              res.statusCode = 200;
+              res.end();
+            })
+            .catch(err => {
+              if (err instanceof Error) {
+                // eslint-disable-next-line no-console
+                console.error(err);
+              } else {
+                // eslint-disable-next-line no-console
+                console.error(new Error(err));
+              }
 
-      break;
-    default:
-      res.statusCode = 405;
-      res.end();
+              res.statusCode = 400;
+              res.end();
+            });
+        });
 
-      break;
-  }
-});
+        break;
+      default:
+        res.statusCode = 405;
+        res.end();
 
-server.listen(port);
+        break;
+    }
+  })
+  .listen(config.server.port);
