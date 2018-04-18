@@ -24,7 +24,7 @@ const bigQuery = require('@google-cloud/bigquery')({
 const http = require('http');
 const port = config.server.port;
 
-var insertData = req => {
+var insertData = data => {
   return new Promise(function(resolve, reject) {
     if (!isValidReq) {
       reject('Invalid or empty request');
@@ -35,7 +35,7 @@ var insertData = req => {
     bigQuery
       .dataset(config.bigQuery.datasetId)
       .table(config.bigQuery.tableId)
-      .insert(req.body, {ignoreUnknownValues: true})
+      .insert(data, {ignoreUnknownValues: true})
       .then(() => {
         resolve();
       })
@@ -50,6 +50,8 @@ var isValidReq = req => {
 };
 
 const server = http.createServer((req, res) => {
+  let body = [];
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
   res.setHeader(
@@ -64,17 +66,19 @@ const server = http.createServer((req, res) => {
 
       break;
     case 'POST':
-      insertData(req)
-        .then(() => {
-          res.statusCode = 200;
-          res.end();
-        })
-        .catch(() => {
-          // console.error('An error occurred:', err);
+      req.on('data', chunk => body.push(chunk)).on('end', () => {
+        body = Buffer.concat(body).toString();
 
-          res.statusCode = 400;
-          res.end();
-        });
+        insertData(body)
+          .then(() => {
+            res.statusCode = 200;
+            res.end();
+          })
+          .catch(() => {
+            res.statusCode = 400;
+            res.end();
+          });
+      });
 
       break;
     default:
