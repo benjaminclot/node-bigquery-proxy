@@ -97,4 +97,15 @@ http
         break;
     }
   })
+  .on('clientError', (err, socket) => {
+    if (err instanceof Error) {
+      // eslint-disable-next-line no-console
+      console.error(err);
+    } else {
+      // eslint-disable-next-line no-console
+      console.error(new Error(err));
+    }
+
+    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  })
   .listen(config.server.port);
