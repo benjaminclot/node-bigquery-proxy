@@ -80,7 +80,7 @@ http
             res.end();
           }
 
-          if (typeof body === 'object') {
+          if (typeof body === 'object' && (body.length > 0 || Object.keys(body).length > 0)) {
             insertData()
               .then(() => {
                 res.statusCode = 200;
