@@ -22,11 +22,14 @@ const bigQuery = require('@google-cloud/bigquery')({
   projectId: config.bigQuery.projectId,
   keyFilename: path.join(__dirname, '..', 'config', 'auth.json'),
 });
-const http = require('http');
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const app = express();
 
 var insertData = data => {
   return new Promise(function(resolve, reject) {
-    if (!isValidReq) {
+    if (!isValidReq(data)) {
       reject('Invalid or empty request');
 
       return;
@@ -52,75 +55,29 @@ var isValidReq = data => {
   );
 };
 
-http
-  .createServer((req, res) => {
-    let body = [];
+const corsOptions = {
+  allowedHeaders: 'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
+  optionsSuccessStatus: 200,
+  origin: true,
+  methods: 'POST',
+  preflightContinue: false,
+};
 
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Accept, Cache-Control, Content-Type, Origin, X-Requested-With'
-    );
+const jsonParser = bodyParser.json();
 
-    switch (req.method) {
-      case 'OPTIONS':
-        res.statusCode = 200;
-        res.end();
+app.options('/', cors(corsOptions));
 
-        break;
-      case 'POST':
-        req
-          .on('error', err => {
-            // eslint-disable-next-line no-console
-            console.error('Request error:', err);
+app.post('/', [cors(corsOptions), jsonParser], (req, res) => {
+  insertData(req.body)
+    .then(() => {
+      res.status(200).end();
+    })
+    .catch(err => {
+      // eslint-disable-next-line no-console
+      console.error(err);
 
-            res.statusCode = 400;
-            res.end();
-          })
-          .on('data', chunk => body.push(chunk))
-          .on('end', () => {
-            body = Buffer.concat(body).toString();
+      res.status(err.code || 400).end();
+    });
+});
 
-            try {
-              body = JSON.parse(body);
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.error('Error while parsing JSON', e);
-
-              res.statusCode = 400;
-              res.end();
-            }
-
-            insertData(body)
-              .then(() => {
-                res.statusCode = 200;
-                res.end();
-              })
-              .catch(err => {
-                // eslint-disable-next-line no-console
-                console.error('BigQuery error:', err);
-
-                res.statusCode = err.code || 400;
-                res.end();
-              });
-          });
-
-        break;
-      default:
-        // eslint-disable-next-line no-console
-        console.error('Method not allowed');
-
-        res.statusCode = 405;
-        res.end();
-
-        break;
-    }
-  })
-  .on('clientError', (err, socket) => {
-    // eslint-disable-next-line no-console
-    console.error(err);
-
-    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
-  })
-  .listen(config.server.port);
+app.listen(config.server.port);
