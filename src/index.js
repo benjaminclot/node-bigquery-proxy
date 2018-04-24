@@ -46,7 +46,10 @@ var insertData = data => {
 };
 
 var isValidReq = data => {
-  return !!(typeof data === 'object' && (data.length > 0 || Object.keys(data).length > 0));
+  return !!(
+    typeof data === 'object' &&
+    (data.length > 0 || Object.keys(data).length > 0)
+  );
 };
 
 http
@@ -67,40 +70,47 @@ http
 
         break;
       case 'POST':
-        req.on('data', chunk => body.push(chunk)).on('end', () => {
-          body = Buffer.concat(body).toString();
-
-          try {
-            body = JSON.parse(body);
-          } catch(e) {
+        req
+          .on('error', err => {
             // eslint-disable-next-line no-console
-            console.error('Error while parsing JSON', e);
+            console.error('Request error:', err);
 
             res.statusCode = 400;
             res.end();
-          }
+          })
+          .on('data', chunk => body.push(chunk))
+          .on('end', () => {
+            body = Buffer.concat(body).toString();
 
-          insertData(body)
-            .then(() => {
-              res.statusCode = 200;
-              res.end();
-            })
-            .catch(err => {
-              if (err instanceof Error) {
-                // eslint-disable-next-line no-console
-                console.error(err);
-              } else {
-                // eslint-disable-next-line no-console
-                console.error(new Error(err));
-              }
+            try {
+              body = JSON.parse(body);
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.error('Error while parsing JSON', e);
 
               res.statusCode = 400;
               res.end();
-            });
-        });
+            }
+
+            insertData(body)
+              .then(() => {
+                res.statusCode = 200;
+                res.end();
+              })
+              .catch(err => {
+                // eslint-disable-next-line no-console
+                console.error('BigQuery error:', err);
+
+                res.statusCode = err.code || 400;
+                res.end();
+              });
+          });
 
         break;
       default:
+        // eslint-disable-next-line no-console
+        console.error('Method not allowed');
+
         res.statusCode = 405;
         res.end();
 
@@ -108,13 +118,8 @@ http
     }
   })
   .on('clientError', (err, socket) => {
-    if (err instanceof Error) {
-      // eslint-disable-next-line no-console
-      console.error(err);
-    } else {
-      // eslint-disable-next-line no-console
-      console.error(new Error(err));
-    }
+    // eslint-disable-next-line no-console
+    console.error(err);
 
     socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
   })
