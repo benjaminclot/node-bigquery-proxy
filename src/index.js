@@ -84,6 +84,14 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
+  app.use(function(err, req, res, next) {
+    if (err.contains('BadRequestError: request aborted')) {
+      res.status(400).end();
+    } else {
+      next(err);
+    }
+  });
+
   app.options('/', cors(corsOptions));
 
   app.post('/', [cors(corsOptions), jsonParser], (req, res) => {
