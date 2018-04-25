@@ -16,15 +16,6 @@
 
 'use strict';
 
-console.error = msg => {
-  // prevent these errors from being logged
-  if (msg.includes('BadRequestError: request aborted')) {
-    return;
-  }
-
-  console.log(msg);
-};
-
 const path = require('path');
 const config = require(path.join(__dirname, '..', 'config', 'config.json'));
 const bigQuery = require('@google-cloud/bigquery')({
@@ -46,9 +37,6 @@ const numCPUs = require('os').cpus().length;
 const app = express();
 require('console-stamp')(console, {
   colors: {stamp: 'yellow', label: 'white', metadata: 'green'},
-  extend: {
-    error: 1,
-  },
   include: ['debug', 'info', 'warn', 'error', 'fatal'],
   level: 'debug',
   metadata: function() {
