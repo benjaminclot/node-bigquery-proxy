@@ -37,11 +37,23 @@ const numCPUs = require('os').cpus().length;
 const app = express();
 require('console-stamp')(console, {
   colors: {stamp: 'yellow', label: 'white', metadata: 'green'},
+  extend: {
+    error: 1,
+  },
   metadata: function() {
     return `[${process.pid}]`;
   },
   pattern: 'dd/mm/yyyy HH:MM:ss.l',
 });
+
+console.error = msg => {
+  // prevent these errors from being logged
+  if (msg.includes('BadRequestError: request aborted')) {
+    return;
+  }
+
+  console.log(msg);
+};
 
 var insertData = data => {
   return new Promise(function(resolve, reject) {
