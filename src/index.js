@@ -85,6 +85,9 @@ if (cluster.isMaster) {
   });
 } else {
   app.use(function(err, req, res, next) {
+    console.log('aaaaaa');
+    console.log(err);
+
     if (err.contains('BadRequestError: request aborted')) {
       res.status(400).end();
     } else {
@@ -100,6 +103,7 @@ if (cluster.isMaster) {
         res.status(200).end();
       })
       .catch(err => {
+        console.log('bbbbbb');
         console.error(err);
 
         res.status(err.code || 400).end();
