@@ -84,17 +84,6 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  app.use(function(err, req, res, next) {
-    console.log('aaaaaa');
-    console.log(err);
-
-    if (err.contains('BadRequestError: request aborted')) {
-      res.status(400).end();
-    } else {
-      next(err);
-    }
-  });
-
   app.options('/', cors(corsOptions));
 
   app.post('/', [cors(corsOptions), jsonParser], (req, res) => {
@@ -103,7 +92,6 @@ if (cluster.isMaster) {
         res.status(200).end();
       })
       .catch(err => {
-        console.log('bbbbbb');
         console.error(err);
 
         res.status(err.code || 400).end();
