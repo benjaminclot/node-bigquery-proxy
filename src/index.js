@@ -37,7 +37,7 @@ const numCPUs = require('os').cpus().length;
 const app = express();
 require('console-stamp')(console, {
   colors: {stamp: 'yellow', label: 'white', metadata: 'green'},
-  include: ['debug', 'info', 'warn', 'error', 'fatal'],
+  include: ['log', 'debug', 'info', 'warn', 'error', 'fatal', 'dir', 'assert'],
   level: 'debug',
   metadata: function() {
     return `[${process.pid}]`;
