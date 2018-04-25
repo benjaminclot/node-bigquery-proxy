@@ -23,9 +23,25 @@ const bigQuery = require('@google-cloud/bigquery')({
   keyFilename: path.join(__dirname, '..', 'config', 'auth.json'),
 });
 const express = require('express');
-const bodyParser = require('body-parser');
+const jsonParser = require('body-parser').json();
 const cors = require('cors');
+const corsOptions = {
+  allowedHeaders: 'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
+  optionsSuccessStatus: 200,
+  origin: true,
+  methods: 'POST',
+  preflightContinue: false,
+};
+const cluster = require('cluster');
+const numCPUs = require('os').cpus().length;
 const app = express();
+require('console-stamp')(console, {
+  colors: {stamp: 'yellow', label: 'white', metadata: 'green'},
+  metadata: function() {
+    return `[${process.pid}]`;
+  },
+  pattern: 'dd/mm/yyyy HH:MM:ss.l',
+});
 
 var insertData = data => {
   return new Promise(function(resolve, reject) {
@@ -55,29 +71,34 @@ var isValidReq = data => {
   );
 };
 
-const corsOptions = {
-  allowedHeaders: 'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
-  optionsSuccessStatus: 200,
-  origin: true,
-  methods: 'POST',
-  preflightContinue: false,
-};
+if (cluster.isMaster) {
+  console.log(`Master ${process.pid} is running`);
 
-const jsonParser = bodyParser.json();
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
 
-app.options('/', cors(corsOptions));
+  cluster.on('exit', worker => {
+    console.log(`Worker ${worker.process.pid} died`);
 
-app.post('/', [cors(corsOptions), jsonParser], (req, res) => {
-  insertData(req.body)
-    .then(() => {
-      res.status(200).end();
-    })
-    .catch(err => {
-      // eslint-disable-next-line no-console
-      console.error(err);
+    cluster.fork();
+  });
+} else {
+  app.options('/', cors(corsOptions));
 
-      res.status(err.code || 400).end();
-    });
-});
+  app.post('/', [cors(corsOptions), jsonParser], (req, res) => {
+    insertData(req.body)
+      .then(() => {
+        res.status(200).end();
+      })
+      .catch(err => {
+        console.error(err);
 
-app.listen(config.server.port);
+        res.status(err.code || 400).end();
+      });
+  });
+
+  app.listen(config.server.port);
+
+  console.log(`Worker ${process.pid} started`);
+}

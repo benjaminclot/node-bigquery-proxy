@@ -1,6 +1,6 @@
 {
   "name": "node-bigquery-proxy",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/benjaminclot/node-bigquery-proxy.git"
@@ -24,6 +24,7 @@
   "dependencies": {
     "@google-cloud/bigquery": "^1.2.0",
     "body-parser": "^1.18.2",
+    "console-stamp": "^0.2.6",
     "cors": "^2.8.4",
     "express": "^4.16.3"
   },
