@@ -16,6 +16,15 @@
 
 'use strict';
 
+console.error = msg => {
+  // prevent these errors from being logged
+  if (msg.includes('BadRequestError: request aborted')) {
+    return;
+  }
+
+  console.log(msg);
+};
+
 const path = require('path');
 const config = require(path.join(__dirname, '..', 'config', 'config.json'));
 const bigQuery = require('@google-cloud/bigquery')({
@@ -40,20 +49,13 @@ require('console-stamp')(console, {
   extend: {
     error: 1,
   },
+  include: ['debug', 'info', 'warn', 'error', 'fatal'],
+  level: 'debug',
   metadata: function() {
     return `[${process.pid}]`;
   },
   pattern: 'dd/mm/yyyy HH:MM:ss.l',
 });
-
-console.error = msg => {
-  // prevent these errors from being logged
-  if (msg.includes('BadRequestError: request aborted')) {
-    return;
-  }
-
-  console.log(msg);
-};
 
 var insertData = data => {
   return new Promise(function(resolve, reject) {
