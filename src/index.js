@@ -29,7 +29,7 @@ const corsOptions = {
   allowedHeaders: 'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
   optionsSuccessStatus: 200,
   origin: true,
-  methods: 'POST',
+  methods: 'OPTIONS,POST',
   preflightContinue: false,
 };
 const cluster = require('cluster');
