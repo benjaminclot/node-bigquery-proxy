@@ -27,6 +27,7 @@ const jsonParser = require('body-parser').json();
 const cors = require('cors');
 const corsOptions = {
   allowedHeaders: 'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
+  credentials: true,
   optionsSuccessStatus: 200,
   origin: true,
   methods: 'OPTIONS,POST',
@@ -87,6 +88,12 @@ if (cluster.isMaster) {
   app.options('/', cors(corsOptions));
 
   app.post('/', [cors(corsOptions), jsonParser], (req, res) => {
+    const allowOrigin = res.get('Access-Control-Allow-Origin');
+
+    if (allowOrigin) {
+      res.set('Timing-Allow-Origin', allowOrigin);
+    }
+
     insertData(req.body)
       .then(() => {
         res.status(200).end();
