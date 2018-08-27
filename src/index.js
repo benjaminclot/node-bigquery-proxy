@@ -100,12 +100,12 @@ if (cluster.isMaster) {
 
     insertData(req.body)
       .then(() => {
-        res.status(200).end('OK');
+        res.status(200).end();
       })
       .catch(err => {
         console.error(JSON.stringify(err));
 
-        res.status(err.code || 400).end(err.message || 'Bad Request');
+        res.status(err.code || 400).end(err.message || '');
       });
   });
 
