@@ -94,6 +94,10 @@ if (cluster.isMaster) {
       res.set('Timing-Allow-Origin', allowOrigin);
     }
 
+    res.set('Content-Type', 'text/plain');
+    res.set('Cache-control', 'no-store, no-cache, private');
+    res.set('Pragma', 'no-cache');
+
     insertData(req.body)
       .then(() => {
         res.status(200).end('OK');
