@@ -23,7 +23,11 @@ const bigQuery = require('@google-cloud/bigquery')({
   keyFilename: path.join(__dirname, '..', 'config', 'auth.json'),
 });
 const express = require('express');
-const jsonParser = require('body-parser').json({ type: 'text/plain' });
+const jsonParser = require('body-parser').json({
+  inflate: true,
+  limit: '200kb',
+  type: 'text/plain',
+});
 const cors = require('cors');
 const corsOptions = {
   allowedHeaders: 'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
