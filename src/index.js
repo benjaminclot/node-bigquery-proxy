@@ -86,8 +86,8 @@ if (cluster.isMaster) {
           res.setHeader('Access-Control-Allow-Origin', requestOrigin);
           res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
           res.setHeader(
-            'Access-Control-Allow-Headers',	
-            'Accept, Cache-Control, Content-Type, Origin, X-Requested-With'	
+            'Access-Control-Allow-Headers',
+            'Accept, Cache-Control, Content-Type, Origin, X-Requested-With'
           );
           res.setHeader('Timing-Allow-Origin', requestOrigin);
 
@@ -95,7 +95,7 @@ if (cluster.isMaster) {
             case 'OPTIONS':
               res.statusCode = 200;
               res.end();
-    
+
               break;
             case 'POST':
               res.setHeader('Cache-control', 'no-store, no-cache, private');
@@ -117,7 +117,7 @@ if (cluster.isMaster) {
                     res.statusCode = 400;
                     res.end(err.message || '');
                   });
-              } catch(e) {
+              } catch (e) {
                 console.error('Error while parsing JSON', JSON.stringify(e));
 
                 res.statusCode = 400;
