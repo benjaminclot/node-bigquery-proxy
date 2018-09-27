@@ -23,20 +23,8 @@ const bigQuery = require('@google-cloud/bigquery')({
   keyFilename: path.join(__dirname, '..', 'config', 'auth.json'),
 });
 const express = require('express');
-const jsonParser = require('body-parser').json({
-  inflate: true,
-  limit: '200kb',
-  type: 'text/plain',
-});
+const bodyParser = require('body-parser');
 const cors = require('cors');
-const corsOptions = {
-  allowedHeaders: 'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
-  credentials: true,
-  optionsSuccessStatus: 200,
-  origin: true,
-  methods: 'OPTIONS,POST',
-  preflightContinue: false,
-};
 const cluster = require('cluster');
 const numCPUs = require('os').cpus().length;
 const app = express();
@@ -51,7 +39,7 @@ require('console-stamp')(console, {
 var insertData = data => {
   return new Promise(function(resolve, reject) {
     if (!isValidReq(data)) {
-      reject('Invalid or empty request');
+      reject(new Error('Invalid or empty request'));
 
       return;
     }
@@ -89,9 +77,29 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  app.options('/', cors(corsOptions));
+  app.use(
+    cors({
+      allowedHeaders:
+        'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
+      credentials: true,
+      optionsSuccessStatus: 200,
+      origin: true,
+      methods: 'OPTIONS,POST',
+      preflightContinue: false,
+    })
+  );
 
-  app.post('/', [cors(corsOptions), jsonParser], (req, res) => {
+  app.use(
+    bodyParser.json({
+      inflate: true,
+      limit: '100kb',
+      type: 'text/plain',
+    })
+  );
+
+  app.use(bodyParser.urlencoded({extended: true}));
+
+  app.post('/', (req, res, next) => {
     const allowOrigin = res.get('Access-Control-Allow-Origin');
 
     if (allowOrigin) {
@@ -106,10 +114,16 @@ if (cluster.isMaster) {
         res.status(200).end();
       })
       .catch(err => {
-        console.error(JSON.stringify(err));
-
-        res.status(err.code || 400).end(err.message || '');
+        next(err);
       });
+  });
+
+  // Error handler
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    console.error(JSON.stringify(err));
+
+    res.status(err.status || err.statusCode || 400).end(err.message || '');
   });
 
   app.listen(config.server.port);
