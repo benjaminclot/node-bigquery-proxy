@@ -22,12 +22,9 @@ const bigQuery = require('@google-cloud/bigquery')({
   projectId: config.bigQuery.projectId,
   keyFilename: path.join(__dirname, '..', 'config', 'auth.json'),
 });
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
 const cluster = require('cluster');
 const numCPUs = require('os').cpus().length;
-const app = express();
+const http = require('http');
 require('console-stamp')(console, {
   colors: {stamp: 'yellow', label: 'white', metadata: 'green'},
   metadata: function() {
@@ -77,56 +74,77 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  app.use(
-    cors({
-      allowedHeaders:
-        'Accept,Cache-Control,Content-Type,Origin,X-Requested-With',
-      credentials: true,
-      optionsSuccessStatus: 200,
-      origin: true,
-      methods: 'OPTIONS,POST',
-      preflightContinue: false,
+  http
+    .createServer((req, res) => {
+      let body = [];
+
+      req
+        .on('data', chunk => body.push(chunk))
+        .on('end', () => {
+          const requestOrigin = req.headers.origin || '*';
+
+          res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+          res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
+          res.setHeader(
+            'Access-Control-Allow-Headers',	
+            'Accept, Cache-Control, Content-Type, Origin, X-Requested-With'	
+          );
+          res.setHeader('Timing-Allow-Origin', requestOrigin);
+
+          switch (req.method) {
+            case 'OPTIONS':
+              res.statusCode = 200;
+              res.end();
+    
+              break;
+            case 'POST':
+              res.setHeader('Cache-control', 'no-store, no-cache, private');
+              res.setHeader('Pragma', 'no-cache');
+
+              body = Buffer.concat(body).toString();
+
+              try {
+                body = JSON.parse(body);
+
+                insertData(body)
+                  .then(() => {
+                    res.statusCode = 200;
+                    res.end();
+                  })
+                  .catch(err => {
+                    console.error('BigQuery', JSON.stringify(err));
+
+                    res.statusCode = 400;
+                    res.end(err.message || '');
+                  });
+              } catch(e) {
+                console.error('Error while parsing JSON', JSON.stringify(e));
+
+                res.statusCode = 400;
+                res.end('Error while parsing JSON');
+              }
+
+              break;
+            default:
+              console.error('Method not allowed', req.method);
+
+              res.statusCode = 405;
+              res.end();
+
+              break;
+          }
+        })
+        .on('error', err => {
+          console.error('HTTP.error', JSON.stringify(err));
+        });
     })
-  );
+    // .on('connection', socket => socket.on('error', err => { console.error('Socket', JSON.stringify(err)); }))
+    .on('clientError', (err, socket) => {
+      // console.error('Request.clientError', JSON.stringify(err));
 
-  app.use(
-    bodyParser.json({
-      inflate: true,
-      limit: '100kb',
-      type: 'text/plain',
+      socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
     })
-  );
-
-  app.use(bodyParser.urlencoded({extended: true}));
-
-  app.post('/', (req, res, next) => {
-    const allowOrigin = res.get('Access-Control-Allow-Origin');
-
-    if (allowOrigin) {
-      res.set('Timing-Allow-Origin', allowOrigin);
-    }
-
-    res.set('Cache-control', 'no-store, no-cache, private');
-    res.set('Pragma', 'no-cache');
-
-    insertData(req.body)
-      .then(() => {
-        res.status(200).end();
-      })
-      .catch(err => {
-        next(err);
-      });
-  });
-
-  // Error handler
-  // eslint-disable-next-line no-unused-vars
-  app.use((err, req, res, next) => {
-    console.error(JSON.stringify(err));
-
-    res.status(err.status || err.statusCode || 400).end(err.message || '');
-  });
-
-  app.listen(config.server.port);
+    .listen(config.server.port);
 
   console.log(`Worker ${process.pid} started`);
 }
